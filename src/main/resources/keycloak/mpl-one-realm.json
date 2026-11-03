@@ -1,0 +1,110 @@
+{
+  "realm": "mpl-one",
+  "enabled": true,
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "roles": {
+    "realm": [
+      {
+        "name": "PLATFORM_ADMIN"
+      },
+      {
+        "name": "ORG_ADMIN"
+      },
+      {
+        "name": "TEACHER"
+      },
+      {
+        "name": "STUDENT"
+      },
+      {
+        "name": "PARENT"
+      },
+      {
+        "name": "BUSINESS_MANAGER"
+      },
+      {
+        "name": "DEVICE"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "mpl-web",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://localhost:3000/*",
+        "http://localhost:8081/swagger-ui/oauth2-redirect.html"
+      ],
+      "webOrigins": [
+        "http://localhost:3000",
+        "http://localhost:8081"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "protocolMappers": [
+        {
+          "name": "mpl-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "mpl-api",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "mpl-api",
+      "publicClient": false,
+      "bearerOnly": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false
+    }
+  ],
+  "users": [
+    {
+      "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "username": "teacher",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Demo",
+      "lastName": "Teacher",
+      "email": "teacher@example.test",
+      "realmRoles": [
+        "TEACHER"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "demo-change-me",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+      "username": "student",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Demo",
+      "lastName": "Student",
+      "email": "student@example.test",
+      "realmRoles": [
+        "STUDENT"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "demo-change-me",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}
