@@ -4,19 +4,20 @@ import jakarta.persistence.criteria.*;
 import java.time.Instant;
 import java.util.*;
 import org.springframework.data.jpa.domain.Specification;
-import vn.mpl.one.core.exception.BadRequestException;
+import vn.mpl.one.core.exception.InvalidFilterException;
 import vn.mpl.one.core.filter.*;
 
 public final class SpecificationBuilder {
   private SpecificationBuilder() {}
 
-  public static <T> Specification<T> build(FilterCriteria criteria, Map<String, Class<?>> fields) {
+  public static <T> Specification<T> build(FilterCriteria criteria, Map<String, FilterField> fields) {
+    FilterParser.validate(criteria, fields);
     Specification<T> result = (r, q, b) -> b.conjunction();
     for (FilterRule rule : criteria.rules()) {
-      Class<?> type = fields.get(rule.field());
-      if (type == null) throw new BadRequestException("Unknown filter field");
+      Class<?> type = fields.get(rule.field()).type();
+      if (type == null) throw new InvalidFilterException("Unknown filter field");
       if (rule.operator() == FilterOperator.LIKE && type != String.class)
-        throw new BadRequestException("LIKE requires text");
+        throw new InvalidFilterException("LIKE requires text");
       List<Object> values =
           rule.value() == null
               ? List.of()
@@ -34,16 +35,28 @@ public final class SpecificationBuilder {
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static Object convert(String value, Class<?> type) {
     try {
-      if (value.isBlank()) throw new BadRequestException("Empty filter value");
+      if (value.isBlank()) throw new InvalidFilterException("Empty filter value");
       if (type == String.class) return value;
       if (type == Instant.class) return Instant.parse(value);
-      if (type == UUID.class) return UUID.fromString(value);
+      if (type == UUID.class) {
+        if (!value.matches("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"))
+          throw new InvalidFilterException("Invalid UUID");
+        return UUID.fromString(value);
+      }
+      if (type == java.time.LocalDate.class) return java.time.LocalDate.parse(value);
+      if (type == java.time.OffsetDateTime.class) return java.time.OffsetDateTime.parse(value);
+      if (type == Integer.class) return Integer.valueOf(value);
+      if (type == java.math.BigDecimal.class) return new java.math.BigDecimal(value);
+      if (type == Boolean.class) {
+        if (!value.equals("true") && !value.equals("false")) throw new InvalidFilterException("Invalid boolean");
+        return Boolean.valueOf(value);
+      }
       if (type == Long.class) return Long.valueOf(value);
       if (type.isEnum()) return Enum.valueOf((Class) type, value);
     } catch (RuntimeException e) {
-      throw new BadRequestException("Invalid filter value");
+      throw new InvalidFilterException("Invalid filter value");
     }
-    throw new BadRequestException("Unsupported filter type");
+    throw new InvalidFilterException("Unsupported filter type");
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
@@ -70,8 +83,8 @@ public final class SpecificationBuilder {
                   + "%",
               '!');
       case IN -> path.in(values);
-      case ISNULL -> b.isNull(path);
-      case NOTNULL -> b.isNotNull(path);
+      case IS_NULL -> b.isNull(path);
+      case IS_NOT_NULL -> b.isNotNull(path);
     };
   }
 }

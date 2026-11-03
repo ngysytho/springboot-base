@@ -12,12 +12,13 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import vn.mpl.one.config.SecurityConfig;
+import vn.mpl.one.config.CorsConfig;
 import vn.mpl.one.core.security.CurrentUserProvider;
-import vn.mpl.one.modules.identity.api.MeController;
+import vn.mpl.one.modules.identity.api.controller.MeController;
 
 @WebMvcTest(MeController.class)
 @ContextConfiguration(
-    classes = {MeController.class, SecurityConfig.class, CurrentUserProvider.class})
+    classes = {MeController.class, SecurityConfig.class, CorsConfig.class, CurrentUserProvider.class})
 class SecurityHttpTest {
   @Autowired MockMvc mvc;
   @MockitoBean JwtDecoder decoder;
@@ -41,5 +42,19 @@ class SecurityHttpTest {
                                 j.subject("known-subject").claim("preferred_username", "teacher"))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.subject").value("known-subject"));
+  }
+
+  @Test void invalidTokenIs401() throws Exception {
+    org.mockito.Mockito.when(decoder.decode("invalid")).thenThrow(new org.springframework.security.oauth2.jwt.BadJwtException("Invalid signature"));
+    mvc.perform(get("/api/v1/me").header("Authorization", "Bearer invalid"))
+        .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.path").value("/api/v1/me"));
+  }
+
+  @Test void rejectedAudienceIs401() throws Exception {
+    org.mockito.Mockito.when(decoder.decode("wrong-audience")).thenThrow(
+        new org.springframework.security.oauth2.jwt.JwtValidationException("Rejected audience",
+            java.util.List.of(new org.springframework.security.oauth2.core.OAuth2Error("invalid_token"))));
+    mvc.perform(get("/api/v1/me").header("Authorization", "Bearer wrong-audience"))
+        .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.error").value("Unauthorized"));
   }
 }

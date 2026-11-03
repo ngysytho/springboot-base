@@ -19,9 +19,17 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.junit.jupiter.*;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import tools.jackson.databind.ObjectMapper;
-import vn.mpl.one.modules.lesson.domain.Lesson;
+import vn.mpl.one.modules.lesson.infrastructure.persistence.entity.LessonJpaEntity;
+import vn.mpl.one.modules.lesson.domain.enums.LessonStatus;
+import vn.mpl.one.modules.lesson.domain.model.Lesson;
+import vn.mpl.one.modules.lesson.domain.repository.LessonRepository;
+import vn.mpl.one.modules.lesson.infrastructure.persistence.repository.LessonJpaRepository;
+import vn.mpl.one.modules.lesson.infrastructure.specification.LessonSpecifications;
+import vn.mpl.one.core.filter.FilterCriteria;
+import vn.mpl.one.core.pagination.PaginationRequest;
 
 @SpringBootTest
+@org.springframework.context.annotation.Import(LessonIntegrationTest.BulkConfiguration.class)
 @AutoConfigureMockMvc
 @ActiveProfiles("local")
 @Testcontainers(disabledWithoutDocker = true)
@@ -214,10 +222,10 @@ class LessonIntegrationTest {
     try {
       a.getTransaction().begin();
       b.getTransaction().begin();
-      Lesson first = a.find(Lesson.class, id), second = b.find(Lesson.class, id);
-      first.edit("First", null);
+      LessonJpaEntity first = a.find(LessonJpaEntity.class, id), second = b.find(LessonJpaEntity.class, id);
+      first.updateContent("First", null, LessonStatus.DRAFT);
       a.getTransaction().commit();
-      second.edit("Second", null);
+      second.updateContent("Second", null, LessonStatus.DRAFT);
       assertThatThrownBy(() -> b.getTransaction().commit()).isInstanceOf(RollbackException.class);
     } finally {
       if (a.getTransaction().isActive()) a.getTransaction().rollback();
@@ -288,5 +296,56 @@ class LessonIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"title\":\"Denied\"}"))
         .andExpect(status().isForbidden());
+  }
+
+  @Autowired LessonRepository lessonRepository;
+  @Autowired LessonJpaRepository lessonJpaRepository;
+
+  @Test void repositoryAdapterMapsDomainAndAlwaysScopes() {
+    UUID org = UUID.fromString(ORG), other = UUID.fromString(OTHER);
+    Lesson saved = lessonRepository.create(Lesson.draft(org, "Repository", "Actual database"));
+    assertThat(saved.id()).isNotNull();
+    assertThat(saved.createdAt()).isNotNull();
+    assertThat(saved.version()).isZero();
+    assertThat(lessonRepository.findById(other, saved.id())).isEmpty();
+    assertThat(lessonRepository.findByCriteria(other, new FilterCriteria(List.of()), PaginationRequest.defaults()).count()).isZero();
+    Lesson changed = lessonRepository.save(saved.edit("Mapped update", null));
+    assertThat(changed.version()).isGreaterThan(saved.version());
+    assertThatThrownBy(() -> lessonRepository.save(saved.edit("Stale", null)))
+        .isInstanceOf(vn.mpl.one.core.exception.ConflictException.class);
+  }
+
+  @Test void baseRepositorySupportsSpecificationsAndAuditMetadata() {
+    UUID org = UUID.fromString(ORG);
+    var saved = lessonJpaRepository.saveAndFlush(new LessonJpaEntity(org, "Base repository", null, LessonStatus.DRAFT));
+    assertThat(lessonJpaRepository.exists(LessonSpecifications.tenant(org))).isTrue();
+    assertThat(lessonJpaRepository.count(LessonSpecifications.tenant(UUID.fromString(OTHER)))).isZero();
+    assertThat(saved.getCreatedAt()).isNotNull();
+    assertThat(saved.getUpdatedAt()).isNotNull();
+    assertThat(saved.getVersion()).isZero();
+  }
+
+  @org.springframework.boot.test.context.TestConfiguration
+  static class BulkConfiguration {
+    @org.springframework.context.annotation.Bean
+    BulkWriter bulkWriter(LessonJpaRepository repository) { return new BulkWriter(repository); }
+  }
+
+  public static class BulkWriter extends vn.mpl.one.core.service.BaseService<LessonJpaEntity> {
+    public BulkWriter(LessonJpaRepository repository) { super(repository); }
+    @org.springframework.transaction.annotation.Transactional
+    public void writeBatch(List<LessonJpaEntity> entities, UUID organizationId) {
+      bulkCreate(entities, LessonSpecifications.tenant(organizationId), organizationId);
+    }
+  }
+
+  @Autowired BulkWriter bulkWriter;
+
+  @Test void partialBulkFailureRollsBackEveryRowInPostgres() {
+    UUID org = UUID.fromString(ORG);
+    var valid = new LessonJpaEntity(org, "First row", null, LessonStatus.DRAFT);
+    var invalid = new LessonJpaEntity(org, null, null, LessonStatus.DRAFT);
+    assertThatThrownBy(() -> bulkWriter.writeBatch(List.of(valid, invalid), org)).isInstanceOf(RuntimeException.class);
+    assertThat(lessonJpaRepository.count(LessonSpecifications.tenant(org))).isZero();
   }
 }

@@ -1,0 +1,381 @@
+springboot-base/
+├── .github/
+│   └── modernize/
+│       └── java-upgrade/
+│           ├── hooks/
+│           │   └── scripts/
+│           │       ├── recordToolUse.ps1
+│           │       └── recordToolUse.sh
+│           └── .gitignore
+├── .mvn/
+│   └── wrapper/
+│       ├── maven-wrapper.jar
+│       └── maven-wrapper.properties
+├── scripts/
+│   └── smoke_local.py
+├── src/
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── vn/
+│   │   │       └── mpl/
+│   │   │           └── one/
+│   │   │               ├── config/
+│   │   │               │   ├── CorsConfig.java
+│   │   │               │   ├── JpaConfig.java
+│   │   │               │   ├── OpenApiConfig.java
+│   │   │               │   └── SecurityConfig.java
+│   │   │               ├── core/
+│   │   │               │   ├── audit/
+│   │   │               │   │   ├── AuditConfig.java
+│   │   │               │   │   └── package-info.java
+│   │   │               │   ├── entity/
+│   │   │               │   │   └── BaseEntity.java
+│   │   │               │   ├── exception/
+│   │   │               │   │   ├── BadRequestException.java
+│   │   │               │   │   ├── BusinessException.java
+│   │   │               │   │   ├── ConflictException.java
+│   │   │               │   │   ├── GlobalExceptionHandler.java
+│   │   │               │   │   ├── InvalidFilterException.java
+│   │   │               │   │   ├── NotFoundException.java
+│   │   │               │   │   └── ResourceNotFoundException.java
+│   │   │               │   ├── filter/
+│   │   │               │   │   ├── FilterCriteria.java
+│   │   │               │   │   ├── FilterField.java
+│   │   │               │   │   ├── FilterOperator.java
+│   │   │               │   │   ├── FilterParser.java
+│   │   │               │   │   └── FilterRule.java
+│   │   │               │   ├── pagination/
+│   │   │               │   │   ├── PageResponse.java
+│   │   │               │   │   ├── PaginationRequest.java
+│   │   │               │   │   └── PaginationUtils.java
+│   │   │               │   ├── repository/
+│   │   │               │   │   ├── BaseRepository.java
+│   │   │               │   │   └── ScopedAggregate.java
+│   │   │               │   ├── response/
+│   │   │               │   │   ├── ApiResponse.java
+│   │   │               │   │   └── ErrorResponse.java
+│   │   │               │   ├── security/
+│   │   │               │   │   ├── AuthenticatedUser.java
+│   │   │               │   │   ├── CurrentUserProvider.java
+│   │   │               │   │   ├── KeycloakJwtRoleConverter.java
+│   │   │               │   │   ├── TenantAuthorizationService.java
+│   │   │               │   │   └── TenantMembershipLookup.java
+│   │   │               │   ├── service/
+│   │   │               │   │   └── BaseService.java
+│   │   │               │   ├── specification/
+│   │   │               │   │   └── SpecificationBuilder.java
+│   │   │               │   ├── tenant/
+│   │   │               │   │   ├── TenantContext.java
+│   │   │               │   │   └── TenantOwned.java
+│   │   │               │   ├── util/
+│   │   │               │   │   └── package-info.java
+│   │   │               │   └── validation/
+│   │   │               │       └── package-info.java
+│   │   │               ├── modules/
+│   │   │               │   ├── ai/
+│   │   │               │   │   ├── api/
+│   │   │               │   │   │   ├── controller/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   ├── dto/
+│   │   │               │   │   │   │   ├── request/
+│   │   │               │   │   │   │   │   └── package-info.java
+│   │   │               │   │   │   │   └── response/
+│   │   │               │   │   │   │       └── package-info.java
+│   │   │               │   │   │   ├── mapper/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   └── package-info.java
+│   │   │               │   │   ├── application/
+│   │   │               │   │   │   ├── service/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   ├── usecase/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   ├── AiGenerationService.java
+│   │   │               │   │   │   ├── AiUsageTracking.java
+│   │   │               │   │   │   ├── ModelProvider.java
+│   │   │               │   │   │   └── package-info.java
+│   │   │               │   │   ├── domain/
+│   │   │               │   │   │   ├── enums/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   ├── model/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   ├── repository/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   └── package-info.java
+│   │   │               │   │   └── infrastructure/
+│   │   │               │   │       ├── persistence/
+│   │   │               │   │       │   ├── entity/
+│   │   │               │   │       │   │   └── package-info.java
+│   │   │               │   │       │   ├── mapper/
+│   │   │               │   │       │   │   └── package-info.java
+│   │   │               │   │       │   └── repository/
+│   │   │               │   │       │       └── package-info.java
+│   │   │               │   │       ├── specification/
+│   │   │               │   │       │   └── package-info.java
+│   │   │               │   │       └── package-info.java
+│   │   │               │   ├── classroom/
+│   │   │               │   │   ├── api/
+│   │   │               │   │   │   ├── controller/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   ├── dto/
+│   │   │               │   │   │   │   ├── request/
+│   │   │               │   │   │   │   │   └── package-info.java
+│   │   │               │   │   │   │   └── response/
+│   │   │               │   │   │   │       └── package-info.java
+│   │   │               │   │   │   ├── mapper/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   └── package-info.java
+│   │   │               │   │   ├── application/
+│   │   │               │   │   │   ├── service/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   ├── usecase/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   ├── InteractiveSession.java
+│   │   │               │   │   │   ├── ParticipantManagement.java
+│   │   │               │   │   │   ├── SessionEvents.java
+│   │   │               │   │   │   └── package-info.java
+│   │   │               │   │   ├── domain/
+│   │   │               │   │   │   ├── enums/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   ├── model/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   ├── repository/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   └── package-info.java
+│   │   │               │   │   └── infrastructure/
+│   │   │               │   │       ├── persistence/
+│   │   │               │   │       │   ├── entity/
+│   │   │               │   │       │   │   └── package-info.java
+│   │   │               │   │       │   ├── mapper/
+│   │   │               │   │       │   │   └── package-info.java
+│   │   │               │   │       │   └── repository/
+│   │   │               │   │       │       └── package-info.java
+│   │   │               │   │       ├── specification/
+│   │   │               │   │       │   └── package-info.java
+│   │   │               │   │       └── package-info.java
+│   │   │               │   ├── device/
+│   │   │               │   │   ├── api/
+│   │   │               │   │   │   ├── controller/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   ├── dto/
+│   │   │               │   │   │   │   ├── request/
+│   │   │               │   │   │   │   │   └── package-info.java
+│   │   │               │   │   │   │   └── response/
+│   │   │               │   │   │   │       └── package-info.java
+│   │   │               │   │   │   ├── mapper/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   └── package-info.java
+│   │   │               │   │   ├── application/
+│   │   │               │   │   │   ├── service/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   ├── usecase/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   ├── DeviceAuthorization.java
+│   │   │               │   │   │   ├── DevicePairing.java
+│   │   │               │   │   │   ├── DeviceRegistration.java
+│   │   │               │   │   │   ├── DeviceStatus.java
+│   │   │               │   │   │   └── package-info.java
+│   │   │               │   │   ├── domain/
+│   │   │               │   │   │   ├── enums/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   ├── model/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   ├── repository/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   └── package-info.java
+│   │   │               │   │   └── infrastructure/
+│   │   │               │   │       ├── persistence/
+│   │   │               │   │       │   ├── entity/
+│   │   │               │   │       │   │   └── package-info.java
+│   │   │               │   │       │   ├── mapper/
+│   │   │               │   │       │   │   └── package-info.java
+│   │   │               │   │       │   └── repository/
+│   │   │               │   │       │       └── package-info.java
+│   │   │               │   │       ├── specification/
+│   │   │               │   │       │   └── package-info.java
+│   │   │               │   │       └── package-info.java
+│   │   │               │   ├── identity/
+│   │   │               │   │   ├── api/
+│   │   │               │   │   │   ├── controller/
+│   │   │               │   │   │   │   └── MeController.java
+│   │   │               │   │   │   ├── dto/
+│   │   │               │   │   │   │   ├── request/
+│   │   │               │   │   │   │   │   └── package-info.java
+│   │   │               │   │   │   │   └── response/
+│   │   │               │   │   │   │       └── package-info.java
+│   │   │               │   │   │   └── mapper/
+│   │   │               │   │   │       └── package-info.java
+│   │   │               │   │   ├── application/
+│   │   │               │   │   │   ├── service/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   └── usecase/
+│   │   │               │   │   │       └── package-info.java
+│   │   │               │   │   ├── domain/
+│   │   │               │   │   │   ├── enums/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   ├── model/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   └── repository/
+│   │   │               │   │   │       └── package-info.java
+│   │   │               │   │   └── infrastructure/
+│   │   │               │   │       ├── persistence/
+│   │   │               │   │       │   ├── entity/
+│   │   │               │   │       │   │   └── UserProfileJpaEntity.java
+│   │   │               │   │       │   ├── mapper/
+│   │   │               │   │       │   │   └── package-info.java
+│   │   │               │   │       │   └── repository/
+│   │   │               │   │       │       └── package-info.java
+│   │   │               │   │       └── specification/
+│   │   │               │   │           └── package-info.java
+│   │   │               │   ├── lesson/
+│   │   │               │   │   ├── api/
+│   │   │               │   │   │   ├── controller/
+│   │   │               │   │   │   │   └── LessonController.java
+│   │   │               │   │   │   ├── dto/
+│   │   │               │   │   │   │   ├── request/
+│   │   │               │   │   │   │   │   ├── CreateLessonRequest.java
+│   │   │               │   │   │   │   │   ├── UpdateLessonRequest.java
+│   │   │               │   │   │   │   │   └── VersionRequest.java
+│   │   │               │   │   │   │   └── response/
+│   │   │               │   │   │   │       └── LessonResponse.java
+│   │   │               │   │   │   └── mapper/
+│   │   │               │   │   │       └── LessonApiMapper.java
+│   │   │               │   │   ├── application/
+│   │   │               │   │   │   ├── service/
+│   │   │               │   │   │   │   └── LessonService.java
+│   │   │               │   │   │   └── usecase/
+│   │   │               │   │   │       ├── CreateLessonCommand.java
+│   │   │               │   │   │       ├── CreateLessonUseCase.java
+│   │   │               │   │   │       └── UpdateLessonCommand.java
+│   │   │               │   │   ├── domain/
+│   │   │               │   │   │   ├── enums/
+│   │   │               │   │   │   │   └── LessonStatus.java
+│   │   │               │   │   │   ├── model/
+│   │   │               │   │   │   │   └── Lesson.java
+│   │   │               │   │   │   └── repository/
+│   │   │               │   │   │       └── LessonRepository.java
+│   │   │               │   │   └── infrastructure/
+│   │   │               │   │       ├── persistence/
+│   │   │               │   │       │   ├── entity/
+│   │   │               │   │       │   │   └── LessonJpaEntity.java
+│   │   │               │   │       │   ├── mapper/
+│   │   │               │   │       │   │   └── LessonPersistenceMapper.java
+│   │   │               │   │       │   └── repository/
+│   │   │               │   │       │       ├── LessonJpaRepository.java
+│   │   │               │   │       │       └── LessonRepositoryAdapter.java
+│   │   │               │   │       └── specification/
+│   │   │               │   │           └── LessonSpecifications.java
+│   │   │               │   ├── organization/
+│   │   │               │   │   ├── api/
+│   │   │               │   │   │   ├── controller/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   ├── dto/
+│   │   │               │   │   │   │   ├── request/
+│   │   │               │   │   │   │   │   └── package-info.java
+│   │   │               │   │   │   │   └── response/
+│   │   │               │   │   │   │       └── package-info.java
+│   │   │               │   │   │   ├── mapper/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   └── package-info.java
+│   │   │               │   │   ├── application/
+│   │   │               │   │   │   ├── service/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   ├── usecase/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   ├── MembershipManagement.java
+│   │   │               │   │   │   ├── OrganizationManagement.java
+│   │   │               │   │   │   └── package-info.java
+│   │   │               │   │   ├── domain/
+│   │   │               │   │   │   ├── enums/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   ├── model/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   ├── repository/
+│   │   │               │   │   │   │   └── package-info.java
+│   │   │               │   │   │   └── package-info.java
+│   │   │               │   │   └── infrastructure/
+│   │   │               │   │       ├── persistence/
+│   │   │               │   │       │   ├── entity/
+│   │   │               │   │       │   │   ├── OrganizationJpaEntity.java
+│   │   │               │   │       │   │   └── OrganizationMembershipJpaEntity.java
+│   │   │               │   │       │   ├── mapper/
+│   │   │               │   │       │   │   └── package-info.java
+│   │   │               │   │       │   └── repository/
+│   │   │               │   │       │       ├── JpaTenantMembershipLookup.java
+│   │   │               │   │       │       └── MembershipJpaRepository.java
+│   │   │               │   │       ├── specification/
+│   │   │               │   │       │   └── package-info.java
+│   │   │               │   │       └── package-info.java
+│   │   │               │   └── workflow/
+│   │   │               │       ├── api/
+│   │   │               │       │   ├── controller/
+│   │   │               │       │   │   └── package-info.java
+│   │   │               │       │   ├── dto/
+│   │   │               │       │   │   ├── request/
+│   │   │               │       │   │   │   └── package-info.java
+│   │   │               │       │   │   └── response/
+│   │   │               │       │   │       └── package-info.java
+│   │   │               │       │   ├── mapper/
+│   │   │               │       │   │   └── package-info.java
+│   │   │               │       │   └── package-info.java
+│   │   │               │       ├── application/
+│   │   │               │       │   ├── service/
+│   │   │               │       │   │   └── package-info.java
+│   │   │               │       │   ├── usecase/
+│   │   │               │       │   │   └── package-info.java
+│   │   │               │       │   ├── WorkflowState.java
+│   │   │               │       │   └── package-info.java
+│   │   │               │       ├── domain/
+│   │   │               │       │   ├── enums/
+│   │   │               │       │   │   └── package-info.java
+│   │   │               │       │   ├── model/
+│   │   │               │       │   │   └── package-info.java
+│   │   │               │       │   ├── repository/
+│   │   │               │       │   │   └── package-info.java
+│   │   │               │       │   └── package-info.java
+│   │   │               │       └── infrastructure/
+│   │   │               │           ├── persistence/
+│   │   │               │           │   ├── entity/
+│   │   │               │           │   │   └── package-info.java
+│   │   │               │           │   ├── mapper/
+│   │   │               │           │   │   └── package-info.java
+│   │   │               │           │   └── repository/
+│   │   │               │           │       └── package-info.java
+│   │   │               │           ├── specification/
+│   │   │               │           │   └── package-info.java
+│   │   │               │           └── package-info.java
+│   │   │               └── MplOneApplication.java
+│   │   └── resources/
+│   │       ├── db/
+│   │       │   ├── local/
+│   │       │   │   └── V2__local_demo_data.sql
+│   │       │   └── migration/
+│   │       │       └── V1__initial_schema.sql
+│   │       ├── keycloak/
+│   │       │   └── mpl-one-realm.json
+│   │       ├── application-local.yml
+│   │       └── application.yml
+│   └── test/
+│       └── java/
+│           └── vn/
+│               └── mpl/
+│                   └── one/
+│                       ├── BaseServiceTest.java
+│                       ├── CoreQueryTest.java
+│                       ├── JwtValidationTest.java
+│                       ├── LessonControllerTest.java
+│                       ├── LessonIntegrationTest.java
+│                       ├── LessonServiceTest.java
+│                       ├── SecurityHttpTest.java
+│                       └── SecurityUnitTest.java
+├── .dockerignore
+├── .env.example
+├── .gitignore
+├── Dockerfile
+├── PROJECT_TREE.txt
+├── README.md
+├── REFACTOR_REPORT.md
+├── VERIFICATION.md
+├── docker-compose.yml
+├── mvnw
+├── mvnw.cmd
+└── pom.xml

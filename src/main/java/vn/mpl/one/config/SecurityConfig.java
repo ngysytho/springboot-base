@@ -10,7 +10,7 @@ import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import tools.jackson.databind.ObjectMapper;
-import vn.mpl.one.core.response.ApiError;
+import vn.mpl.one.core.response.ErrorResponse;
 import vn.mpl.one.core.security.KeycloakJwtRoleConverter;
 
 @Configuration
@@ -44,16 +44,17 @@ public class SecurityConfig {
               response.setHeader("WWW-Authenticate", "Bearer");
               response.setContentType("application/json");
               mapper.writeValue(
-                  response.getOutputStream(), ApiError.of(401, "Authentication required"));
+                  response.getOutputStream(), ErrorResponse.of(401, "Authentication required", request.getRequestURI()));
             };
     var denied =
         (org.springframework.security.web.access.AccessDeniedHandler)
             (request, response, e) -> {
               response.setStatus(403);
               response.setContentType("application/json");
-              mapper.writeValue(response.getOutputStream(), ApiError.of(403, "Access denied"));
+              mapper.writeValue(response.getOutputStream(), ErrorResponse.of(403, "Access denied", request.getRequestURI()));
             };
-    return http.csrf(c -> c.disable())
+    return http.cors(org.springframework.security.config.Customizer.withDefaults())
+        .csrf(c -> c.disable())
         .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
             a ->

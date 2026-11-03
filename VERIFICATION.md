@@ -1,3 +1,13 @@
+# Current refactor status — 3 November 2026
+
+**Not executed:** Maven compilation, tests, packaging, Docker commands, application startup and smoke tests. The user explicitly requested source changes without running checks.
+
+The existing `target/` JAR/classes and Surefire reports, if present, are pre-refactor artifacts and must not be treated as verification of current source. No current pass count or compilation-success claim is made. `REFACTOR_REPORT.md` describes the changes and commands to run later.
+
+---
+
+## Historical report (before this refactor)
+
 # Initialization verification
 
 Verified on 3 November 2026 (Asia/Ho_Chi_Minh).

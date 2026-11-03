@@ -1,75 +1,73 @@
 package vn.mpl.one.core.exception;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.*;
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.*;
 import org.springframework.http.*;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.web.bind.*;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-import vn.mpl.one.core.response.ApiError;
+import org.springframework.web.context.request.*;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import vn.mpl.one.core.response.ErrorResponse;
 
 @RestControllerAdvice
-public class GlobalExceptionHandler {
-  private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+  private static final Logger LOG = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-  @ExceptionHandler(MethodArgumentNotValidException.class)
-  ResponseEntity<ApiError> validation(MethodArgumentNotValidException e) {
+  @Override
+  protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
+      HttpHeaders headers, HttpStatusCode status, WebRequest request) {
     Map<String, String> errors = new LinkedHashMap<>();
-    e.getBindingResult()
-        .getFieldErrors()
-        .forEach(f -> errors.put(f.getField(), f.getDefaultMessage()));
-    return ResponseEntity.badRequest()
-        .body(new ApiError(false, 400, "Validation failed", errors, Instant.now()));
+    ex.getBindingResult().getFieldErrors().forEach(e -> errors.put(e.getField(), Objects.toString(e.getDefaultMessage(), "Invalid value")));
+    return new ResponseEntity<>(new ErrorResponse(false, 400, "Bad Request", "Validation failed",
+        path(request), Instant.now(), errors), headers, HttpStatus.BAD_REQUEST);
   }
 
-  @ExceptionHandler({
-    BadRequestException.class,
-    MethodArgumentTypeMismatchException.class,
-    HttpMessageNotReadableException.class,
-    MissingRequestHeaderException.class,
-    MissingServletRequestParameterException.class,
-    jakarta.validation.ConstraintViolationException.class
-  })
-  ResponseEntity<ApiError> bad(Exception e) {
-    return error(400, "Invalid request");
+  @Override
+  protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body, HttpHeaders headers,
+      HttpStatusCode status, WebRequest request) {
+    // Preserve framework statuses (400/404/405/415/etc.) without returning framework exception details.
+    String message = status.is5xxServerError() ? "Internal server error" : "Invalid request";
+    return new ResponseEntity<>(ErrorResponse.of(status.value(), message, path(request)), headers, status);
   }
 
-  @ExceptionHandler(NotFoundException.class)
-  ResponseEntity<ApiError> missing(Exception e) {
-    return error(404, "Resource not found");
+  @ExceptionHandler({BadRequestException.class, jakarta.validation.ConstraintViolationException.class})
+  ResponseEntity<ErrorResponse> bad(Exception ex, HttpServletRequest request) {
+    return error(400, "Invalid request", request);
   }
-
-  @ExceptionHandler({
-    ConflictException.class,
-    OptimisticLockingFailureException.class,
-    DataIntegrityViolationException.class
-  })
-  ResponseEntity<ApiError> conflict(Exception e) {
-    return error(409, "Resource conflict; reload and retry");
+  @ExceptionHandler(ResourceNotFoundException.class)
+  ResponseEntity<ErrorResponse> missing(Exception ex, HttpServletRequest request) {
+    return error(404, "Resource not found", request);
   }
-
+  @ExceptionHandler({BusinessException.class, OptimisticLockingFailureException.class,
+      jakarta.persistence.OptimisticLockException.class, DataIntegrityViolationException.class})
+  ResponseEntity<ErrorResponse> conflict(Exception ex, HttpServletRequest request) {
+    return error(409, "Resource conflict; reload and retry", request);
+  }
   @ExceptionHandler(AccessDeniedException.class)
-  ResponseEntity<ApiError> forbidden(Exception e) {
-    return error(403, "Access denied");
+  ResponseEntity<ErrorResponse> forbidden(Exception ex, HttpServletRequest request) {
+    return error(403, "Access denied", request);
   }
-
   @ExceptionHandler(AuthenticationException.class)
-  ResponseEntity<ApiError> unauthenticated(Exception e) {
-    return error(401, "Authentication required");
+  ResponseEntity<ErrorResponse> unauthenticated(Exception ex, HttpServletRequest request) {
+    return ResponseEntity.status(401).header(HttpHeaders.WWW_AUTHENTICATE, "Bearer")
+        .body(ErrorResponse.of(401, "Authentication required", request.getRequestURI()));
   }
-
   @ExceptionHandler(Exception.class)
-  ResponseEntity<ApiError> unexpected(Exception e) {
-    log.error("Unhandled request failure", e);
-    return error(500, "Internal server error");
+  ResponseEntity<ErrorResponse> unexpected(Exception ex, HttpServletRequest request) {
+    // Never log request bodies, tokens, credentials, or exception messages containing bind values.
+    LOG.error("Unhandled request failure: {}", ex.getClass().getName());
+    return error(500, "Internal server error", request);
   }
-
-  private ResponseEntity<ApiError> error(int status, String message) {
-    return ResponseEntity.status(status).body(ApiError.of(status, message));
+  private ResponseEntity<ErrorResponse> error(int status, String message, HttpServletRequest request) {
+    return ResponseEntity.status(status).body(ErrorResponse.of(status, message, request.getRequestURI()));
+  }
+  private String path(WebRequest request) {
+    return request instanceof ServletWebRequest servlet ? servlet.getRequest().getRequestURI() : "";
   }
 }

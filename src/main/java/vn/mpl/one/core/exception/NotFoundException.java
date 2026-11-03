@@ -1,7 +1,7 @@
 package vn.mpl.one.core.exception;
 
-public class NotFoundException extends RuntimeException {
-  public NotFoundException(String message) {
-    super(message);
-  }
+/** Compatibility alias for internal extensions written before the package refactor. */
+@Deprecated
+public class NotFoundException extends ResourceNotFoundException {
+  public NotFoundException(String message) { super(message); }
 }
