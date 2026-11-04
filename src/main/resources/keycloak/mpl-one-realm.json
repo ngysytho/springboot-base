@@ -71,7 +71,7 @@
       "protocol": "openid-connect",
       "publicClient": false,
       "clientAuthenticatorType": "client-secret",
-      "secret": "${KEYCLOAK_BFF_CLIENT_SECRET}",
+      "secret": "$(env:KEYCLOAK_BFF_CLIENT_SECRET)",
       "standardFlowEnabled": true,
       "implicitFlowEnabled": false,
       "directAccessGrantsEnabled": false,
@@ -99,46 +99,6 @@
             "id.token.claim": "false",
             "access.token.claim": "true"
           }
-        }
-      ]
-    }
-  ],
-  "users": [
-    {
-      "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      "username": "teacher",
-      "enabled": true,
-      "emailVerified": true,
-      "firstName": "Demo",
-      "lastName": "Teacher",
-      "email": "teacher@example.test",
-      "realmRoles": [
-        "TEACHER"
-      ],
-      "credentials": [
-        {
-          "type": "password",
-          "value": "demo-change-me",
-          "temporary": false
-        }
-      ]
-    },
-    {
-      "id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-      "username": "student",
-      "enabled": true,
-      "emailVerified": true,
-      "firstName": "Demo",
-      "lastName": "Student",
-      "email": "student@example.test",
-      "realmRoles": [
-        "STUDENT"
-      ],
-      "credentials": [
-        {
-          "type": "password",
-          "value": "demo-change-me",
-          "temporary": false
         }
       ]
     }

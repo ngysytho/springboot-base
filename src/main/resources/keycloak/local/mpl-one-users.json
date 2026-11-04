@@ -1,0 +1,43 @@
+{
+  "realm": "mpl-one",
+  "users": [
+    {
+      "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "username": "teacher",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Demo",
+      "lastName": "Teacher",
+      "email": "teacher@example.test",
+      "realmRoles": [
+        "TEACHER"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "$(env:KEYCLOAK_LOCAL_DEMO_PASSWORD)",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+      "username": "student",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Demo",
+      "lastName": "Student",
+      "email": "student@example.test",
+      "realmRoles": [
+        "STUDENT"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "$(env:KEYCLOAK_LOCAL_DEMO_PASSWORD)",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

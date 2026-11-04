@@ -1,0 +1,8 @@
+# Explicit opt-in only. Apply base realm first. Never use against production.
+services:
+  keycloak-config:
+    environment:
+      IMPORT_FILES_LOCATIONS: /local/mpl-one-users.json
+      KEYCLOAK_LOCAL_DEMO_PASSWORD: ${KEYCLOAK_LOCAL_DEMO_PASSWORD:?Set a disposable local demo password}
+    volumes:
+      - ./src/main/resources/keycloak/local/mpl-one-users.json:/local/mpl-one-users.json:ro

@@ -37,9 +37,10 @@ codes/state as required by OIDC, never OAuth tokens.
    Configure exact HTTPS equivalents for production. No wildcard redirects.
 3. Copy the confidential client secret into backend-only
    `KEYCLOAK_BFF_CLIENT_SECRET`. Do not put it into frontend build variables.
-   The local realm import references this environment variable; Compose supplies
-   it to Keycloak and the backend. Existing realms are NOT updated by startup
-   import: apply these settings manually for existing installations.
+   The realm JSON uses config-cli substitution `$(env:KEYCLOAK_BFF_CLIENT_SECRET)`;
+   Compose supplies it to the sync service and backend. Apply existing realm
+   changes with `docker compose run --rm keycloak-config`; see
+   [KEYCLOAK_CONFIG.md](KEYCLOAK_CONFIG.md). Startup realm import is disabled.
 4. Assign profile, email and roles default client scopes. Retain existing realm
    roles PLATFORM_ADMIN, ORG_ADMIN, TEACHER, STUDENT, PARENT, BUSINESS_MANAGER.
    Ensure realm roles and `mpl-api` client roles are included in access-token

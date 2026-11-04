@@ -69,6 +69,7 @@ cd springboot-base
 cp .env.example .env
 # Edit .env as desired; these are disposable local credentials.
 docker compose up -d app-db keycloak-db keycloak
+docker compose run --rm keycloak-config
 # Wait until this returns the realm configuration:
 curl --fail http://localhost:8180/realms/mpl-one/.well-known/openid-configuration
 set -a
@@ -77,12 +78,14 @@ set +a
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-The database services have readiness checks. Keycloak imports the realm on first startup. Repeat the discovery request if Keycloak is still starting. Maven application startup runs Flyway, then Hibernate validates the schema. HikariCP defaults to ten connections, configurable using `DB_POOL_SIZE`. Open-in-view is disabled.
+The database services have readiness checks. Keycloak configuration is applied explicitly via the one-shot `keycloak-config` service, including updates to existing realms. See [configuration-as-code workflow](KEYCLOAK_CONFIG.md). Repeat the discovery request if Keycloak is still starting. Maven application startup runs Flyway, then Hibernate validates the schema. HikariCP defaults to ten connections, configurable using `DB_POOL_SIZE`. Open-in-view is disabled.
 
 Or build and run the Java application in Docker:
 
 ```sh
-docker compose --profile api up -d --build
+docker compose up -d app-db keycloak-db keycloak
+docker compose run --rm keycloak-config
+docker compose --profile api up -d --build api
 ```
 
 API: `http://localhost:8081`; Swagger: `http://localhost:8081/swagger-ui/index.html`; OpenAPI: `http://localhost:8081/v3/api-docs`; health: `http://localhost:8081/actuator/health`; Keycloak admin: `http://localhost:8180/admin`. PostgreSQL application port defaults to localhost:5433 (set `DB_PORT=5432` if free); Keycloak's database has no host port. Container-to-container JWKS uses `http://keycloak:8080` while issuer validation always uses the externally visible `http://localhost:8180/realms/mpl-one`.
@@ -108,10 +111,10 @@ CSRF, frontend integration and production Redis configuration.
 
 | Username | Development password | Role | Organization |
 |---|---|---|---|
-| teacher | demo-change-me | TEACHER | `11111111-1111-1111-1111-111111111111` |
-| student | demo-change-me | STUDENT (read only) | same |
+| teacher | KEYCLOAK_LOCAL_DEMO_PASSWORD | TEACHER | `11111111-1111-1111-1111-111111111111` |
+| student | KEYCLOAK_LOCAL_DEMO_PASSWORD | STUDENT (read only) | same |
 
-These are intentionally public development credentials, not production secrets. Keycloak admin credentials come exclusively from `.env` and are never exposed by the API. Demo user IDs match `user_profiles.subject` in the local migration. The second organization `22222222-2222-2222-2222-222222222222` has no demo memberships.
+These accounts are seeded only by the explicit local override described in [KEYCLOAK_CONFIG.md](KEYCLOAK_CONFIG.md); the normal realm sync does not manage users. Passwords are supplied through the local environment. Keycloak admin credentials come exclusively from `.env` and are never exposed by the API. Demo user IDs match `user_profiles.subject` in the local migration. The second organization `22222222-2222-2222-2222-222222222222` has no demo memberships.
 
 ## Lesson requests
 

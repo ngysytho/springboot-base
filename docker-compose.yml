@@ -26,9 +26,8 @@ services:
       retries: 20
   keycloak:
     image: quay.io/keycloak/keycloak:26.8.1
-    command: ["start-dev", "--import-realm"]
+    command: ["start-dev"]
     environment:
-      KEYCLOAK_BFF_CLIENT_SECRET: ${KEYCLOAK_BFF_CLIENT_SECRET:?Set BFF secret}
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
       KC_DB_USERNAME: ${KEYCLOAK_DB_USERNAME}
@@ -38,10 +37,55 @@ services:
       KC_HOSTNAME: http://localhost:8180
       KC_HEALTH_ENABLED: "true"
     ports: ["127.0.0.1:8180:8080"]
-    volumes: ["./src/main/resources/keycloak:/opt/keycloak/data/import:ro"]
     depends_on:
       keycloak-db:
         condition: service_healthy
+  # Explicit one-shot Admin API synchronization; never runs during API startup.
+  keycloak-config:
+    profiles: ["keycloak-config"]
+    image: adorsys/keycloak-config-cli:6.5.1-26.5.5@sha256:0955d98c8a341898b7aa177477edf8a1e90569ae50bbe7598141c1270b773274
+    restart: "no"
+    environment:
+      KEYCLOAK_URL: ${KEYCLOAK_CONFIG_URL:-http://keycloak:8080}
+      KEYCLOAK_USER: ${KEYCLOAK_CONFIG_ADMIN:-${KEYCLOAK_ADMIN}}
+      KEYCLOAK_PASSWORD: ${KEYCLOAK_CONFIG_ADMIN_PASSWORD:-${KEYCLOAK_ADMIN_PASSWORD}}
+      KEYCLOAK_LOGINREALM: master
+      KEYCLOAK_CLIENTID: admin-cli
+      KEYCLOAK_SSLVERIFY: "true"
+      KEYCLOAK_AVAILABILITYCHECK_ENABLED: "true"
+      KEYCLOAK_AVAILABILITYCHECK_TIMEOUT: 120s
+      IMPORT_FILES_LOCATIONS: ${KEYCLOAK_CONFIG_FILES:-/config/mpl-one-realm.json}
+      IMPORT_VARSUBSTITUTION_ENABLED: "true"
+      IMPORT_VARSUBSTITUTION_UNDEFINEDISERROR: "true"
+      IMPORT_CACHE_ENABLED: "false"
+      IMPORT_REMOTESTATE_ENABLED: "false"
+      IMPORT_MANAGED_ROLE: no-delete
+      IMPORT_MANAGED_CLIENT: no-delete
+      IMPORT_MANAGED_CLIENTSCOPE: no-delete
+      IMPORT_MANAGED_SCOPEMAPPING: no-delete
+      IMPORT_MANAGED_CLIENTSCOPEMAPPING: no-delete
+      IMPORT_MANAGED_AUTHENTICATIONFLOW: no-delete
+      IMPORT_MANAGED_GROUP: no-delete
+      IMPORT_MANAGED_REQUIREDACTION: no-delete
+      IMPORT_MANAGED_COMPONENT: no-delete
+      IMPORT_MANAGED_SUBCOMPONENT: no-delete
+      IMPORT_MANAGED_IDENTITYPROVIDER: no-delete
+      IMPORT_MANAGED_IDENTITYPROVIDERMAPPER: no-delete
+      IMPORT_MANAGED_CLIENTAUTHORIZATIONRESOURCES: no-delete
+      IMPORT_MANAGED_CLIENTAUTHORIZATIONPOLICIES: no-delete
+      IMPORT_MANAGED_CLIENTAUTHORIZATIONSCOPES: no-delete
+      IMPORT_MANAGED_MESSAGEBUNDLES: no-delete
+      IMPORT_MANAGED_WORKFLOW: no-delete
+      IMPORT_USERS_MERGEROLES: "true"
+      IMPORT_USERS_MERGEGROUPS: "true"
+      LOGGING_LEVEL_HTTP: "OFF"
+      LOGGING_LEVEL_REALMCONFIG: "OFF"
+      KEYCLOAK_BFF_CLIENT_SECRET: ${KEYCLOAK_BFF_CLIENT_SECRET:?Set BFF secret}
+    volumes:
+      - ./src/main/resources/keycloak/mpl-one-realm.json:/config/mpl-one-realm.json:ro
+    depends_on:
+      keycloak:
+        condition: service_started
   api:
     profiles: ["api"]
     build: .
