@@ -1,6 +1,6 @@
 # MPL One AI Smart TV backend
 
-Java 21 / Spring Boot 4.1.2 modular monolith in package `vn.mpl.one`. The refactored Lesson module demonstrates a reusable JPA core, validated DTOs, tenant authorization, Keycloak JWT authentication, filtering and optimistic locking. Other business areas expose extension interfaces only.
+Java 21 / Spring Boot 4.1.2 modular monolith in package `vn.mpl.one`. The refactored Lesson module demonstrates a reusable JPA core, validated DTOs, tenant authorization, Keycloak OIDC session authentication, filtering and optimistic locking. Other business areas expose extension interfaces only.
 
 ## Architecture and reference inspection
 
@@ -46,7 +46,7 @@ springboot-base/
 └── src/test/java/vn/mpl/one/   Unit, HTTP security, JWT, PostgreSQL integration tests
 ```
 
-Controllers depend on application services; application services depend on domain repository contracts. Infrastructure implements those contracts. `Lesson` is an immutable domain record without Hibernate annotations; `LessonJpaEntity` owns persistence mapping. Only the persistence adapter extends the protected, abstract `BaseService`. API mapping produces response DTOs without exposing entities. Tenant context is immutable and explicit, not a thread-local. The core depends on `TenantMembershipLookup`; the organization module supplies its JPA adapter, keeping the core independent of business modules. Every Lesson operation checks database membership and composes organization scope separately from user filters. PLATFORM_ADMIN has no implicit membership bypass. Mutations require both a TEACHER or ORG_ADMIN JWT role and a TEACHER or ORG_ADMIN membership. Reads require an allowed human realm role and active membership; DEVICE tokens cannot access these user APIs. This initial policy allows members to read all Lesson statuses.
+Controllers depend on application services; application services depend on domain repository contracts. Infrastructure implements those contracts. `Lesson` is an immutable domain record without Hibernate annotations; `LessonJpaEntity` owns persistence mapping. Only the persistence adapter extends the protected, abstract `BaseService`. API mapping produces response DTOs without exposing entities. Tenant context is immutable and explicit, not a thread-local. The core depends on `TenantMembershipLookup`; the organization module supplies its JPA adapter, keeping the core independent of business modules. Every Lesson operation checks database membership and composes organization scope separately from user filters. PLATFORM_ADMIN has no implicit membership bypass. Mutations require both a TEACHER or ORG_ADMIN application role and a TEACHER or ORG_ADMIN membership. Reads require an allowed human realm role and active membership; DEVICE tokens cannot access these user APIs. This initial policy allows members to read all Lesson statuses.
 
 ## Versions and requirements
 
@@ -99,9 +99,12 @@ Realm imports do not overwrite an existing realm. Use the admin console for exis
 
 ## Authentication and demo users
 
-Realm `mpl-one` defines PLATFORM_ADMIN, ORG_ADMIN, TEACHER, STUDENT, PARENT, BUSINESS_MANAGER and DEVICE. `mpl-web` is public, uses authorization code + mandatory PKCE S256, and has password grants disabled. Its audience mapper adds `mpl-api` to access tokens. `mpl-api` is an API audience, not a login client. JWT verification checks JWKS signature, issuer, audience and time validity. Realm and `mpl-api` client roles map to `ROLE_*` authorities; roles from unrelated clients are ignored.
-
-Use Swagger's **Authorize → keycloak** flow with client ID `mpl-web`, scopes `openid profile`, and no client secret. Its callback is pre-registered. A browser frontend may use `http://localhost:3000/*` and PKCE. The Bearer option also accepts an already issued access token. For curl examples below, obtain your **access token** from the authorized browser session; never use an ID token or admin credentials.
+Browser authentication now uses the confidential `mpl-bff` OIDC client. Open
+`/oauth2/authorization/mpl-bff` to sign in. The backend exchanges the authorization
+code and stores tokens in the HTTP session; the browser receives an opaque,
+HttpOnly session cookie and safe profile data. Bearer headers are not accepted by
+the browser API. See [BFF migration and setup](BFF_MIGRATION.md) for Keycloak,
+CSRF, frontend integration and production Redis configuration.
 
 | Username | Development password | Role | Organization |
 |---|---|---|---|
@@ -114,40 +117,17 @@ These are intentionally public development credentials, not production secrets. 
 
 `X-Organization-Id` selects a tenant; it never grants access. All endpoints require authentication and active membership. Invalid inputs are 400, missing/invalid authentication 401, insufficient permission 403, absent or cross-tenant resources within an authorized tenant 404, stale versions/constraints 409, and unexpected errors a generic 500. Security-filter errors also return structured JSON. Server responses do not disclose database details or stack traces.
 
-```sh
-export TOKEN='<access-token>'
-export ORG='11111111-1111-1111-1111-111111111111'
-curl -H "Authorization: Bearer $TOKEN" http://localhost:8081/api/v1/me
+Use the same-origin `bffFetch` example in [BFF_MIGRATION.md](BFF_MIGRATION.md).
+For example, create a lesson with:
 
-curl -X POST http://localhost:8081/api/v1/lessons \
-  -H "Authorization: Bearer $TOKEN" -H "X-Organization-Id: $ORG" \
-  -H 'Content-Type: application/json' \
-  -d '{"title":"Math foundations","description":"Fractions and algebra"}'
-
-# Set this to data.id from the create response:
-export LESSON_ID='<lesson-uuid>'
-curl -H "Authorization: Bearer $TOKEN" -H "X-Organization-Id: $ORG" \
-  "http://localhost:8081/api/v1/lessons/$LESSON_ID"
-
-curl -G http://localhost:8081/api/v1/lessons \
-  -H "Authorization: Bearer $TOKEN" -H "X-Organization-Id: $ORG" \
-  --data-urlencode 'page=1' --data-urlencode 'size=10' \
-  --data-urlencode 'sort=title:asc' \
-  --data-urlencode 'filter=title:like:math' \
-  --data-urlencode 'filter=status:in:DRAFT,PUBLISHED'
-
-curl -X PUT "http://localhost:8081/api/v1/lessons/$LESSON_ID" \
-  -H "Authorization: Bearer $TOKEN" -H "X-Organization-Id: $ORG" \
-  -H 'Content-Type: application/json' \
-  -d '{"title":"Math revised","description":"Updated","version":0}'
-
-curl -X POST "http://localhost:8081/api/v1/lessons/$LESSON_ID/publish" \
-  -H "Authorization: Bearer $TOKEN" -H "X-Organization-Id: $ORG" \
-  -H 'Content-Type: application/json' -d '{"version":1}'
-
-curl -X DELETE "http://localhost:8081/api/v1/lessons/$LESSON_ID?version=2" \
-  -H "Authorization: Bearer $TOKEN" -H "X-Organization-Id: $ORG"
+```js
+await bffFetch('/api/v1/lessons', {
+  method: 'POST',
+  headers: {'Content-Type': 'application/json', 'X-Organization-Id': organizationId},
+  body: JSON.stringify({title: 'Math foundations', description: 'Fractions and algebra'})
+});
 ```
+
 
 Use the latest response `version` for each mutation; example versions assume exactly those preceding successful changes. Creation always starts in DRAFT. Publishing moves to PUBLISHED and rejects ARCHIVED entities. ARCHIVED is reserved for a future authorized archive use case; arbitrary status changes are not accepted by update DTOs.
 
@@ -163,7 +143,7 @@ Filter fields: title, description, status, createdAt, updatedAt, version. Enums 
 
 `LessonController → LessonApiMapper → LessonService / CreateLessonUseCase → domain LessonRepository → LessonRepositoryAdapter → LessonJpaRepository → PostgreSQL`.
 
-The controller validates HTTP DTOs and parses query syntax. The API mapper creates application command records and maps domain results into response DTOs. The transactional application service checks JWT roles and database membership before calling the domain repository. Domain methods enforce title/description rules, version expectations and publish transitions. The adapter independently applies organization scope, validates typed filter/operator policies and maps JPA state to domain records. Updates load the managed row within scope, compare versions, copy content and flush; database `@Version` still detects concurrent writes.
+The controller validates HTTP DTOs and parses query syntax. The API mapper creates application command records and maps domain results into response DTOs. The transactional application service checks session roles and database membership before calling the domain repository. Domain methods enforce title/description rules, version expectations and publish transitions. The adapter independently applies organization scope, validates typed filter/operator policies and maps JPA state to domain records. Updates load the managed row within scope, compare versions, copy content and flush; database `@Version` still detects concurrent writes.
 
 1. Add a module with `api/controller`, `api/dto/{request,response}`, `api/mapper`, `application/{service,usecase}`, `domain/{model,enums,repository}`, `infrastructure/persistence/{entity,repository,mapper}`, and `infrastructure/specification`.
 2. Keep domain records and repository interfaces free of Hibernate, MVC and Keycloak dependencies. Application services inject domain contracts, never Spring Data repositories or concrete persistence adapters.
@@ -187,7 +167,7 @@ For aggregation, implement `ScopedAggregate<Entity,DomainMetric,Result>` with a 
 
 Auditing is enabled in `AuditConfig`, while `JpaConfig` enables transaction management. BaseEntity retains UUIDs, Instant timestamps and optimistic locking. Optional createdBy/updatedBy columns were not added because existing requirements do not define actor retention; security audit events remain separate from entity timestamps.
 
-`CorsConfig` allows only explicit `CORS_ALLOWED_ORIGINS`. The local profile defaults to `http://localhost:3000`; other profiles default to no cross-origin access. Bearer authorization does not use cookie credentials. Wildcard origins are rejected.
+`CorsConfig` allows only explicit `CORS_ALLOWED_ORIGINS`. The local profile defaults to `http://localhost:3000`; other profiles default to no cross-origin access. Credentialed CORS is enabled; CSRF remains required. Wildcard origins are rejected.
 
 Other module contracts, including `InteractiveSession`, `ParticipantManagement` and `SessionEvents`, retain their existing packages and public method signatures. Planned packages contain documentation only. AI, device pairing, real-time sessions and workflow execution still need defined implementations.
 
@@ -203,6 +183,6 @@ Other module contracts, including `InteractiveSession`, `ParticipantManagement` 
 
 The updated PostgreSQL integration class uses Testcontainers `postgres:18`, Flyway and Hibernate validation. It contains tests for CRUD/publish, 401/403/404/409, filtering/pagination, membership and cross-tenant access, repository mapping, BaseRepository auditing, full rollback on bulk failure, and two independent persistence contexts competing on `@Version`. These updated tests have not been executed. It explicitly skips when Docker is unavailable. A skipped test is not evidence that database behavior passed. Unit tests use Mockito only where a database is irrelevant. JWT tests sign real RSA tokens and serve local JWKS to exercise issuer, audience, signature and expiry validation.
 
-With Keycloak and the local API running, `python3 scripts/smoke_local.py` exercises real authorization code + PKCE, token validation, `/me`, and Lesson CRUD/publish/filtering. It uses the documented demo teacher, never prints tokens, and deletes its own test lesson.
+The legacy Bearer smoke script is retired and sends no requests. Existing JWT HTTP tests describe the pre-migration API and need adaptation before being used for BFF verification. No tests were added or executed for this migration, as requested.
 
 **Current refactor: build, tests, application startup and smoke tests were not run, as explicitly requested.** Historical results in `VERIFICATION.md` apply only to the previous implementation. See `REFACTOR_REPORT.md` for the new structure, changed-file list, compatibility notes and remaining work. Before production, provide externally managed database credentials and TLS Keycloak endpoints, provision actual identities/memberships, and deploy Keycloak with production configuration. Swagger is disabled outside `local` unless `API_DOCS_ENABLED=true`. This repository supplies the foundation, not production deployment infrastructure or all 32 mini-apps.

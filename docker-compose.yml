@@ -28,6 +28,7 @@ services:
     image: quay.io/keycloak/keycloak:26.8.1
     command: ["start-dev", "--import-realm"]
     environment:
+      KEYCLOAK_BFF_CLIENT_SECRET: ${KEYCLOAK_BFF_CLIENT_SECRET:?Set BFF secret}
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
       KC_DB_USERNAME: ${KEYCLOAK_DB_USERNAME}
@@ -50,6 +51,8 @@ services:
       DB_URL: jdbc:postgresql://app-db:5432/mpl_one
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
+      KEYCLOAK_BFF_CLIENT_SECRET: ${KEYCLOAK_BFF_CLIENT_SECRET:?Set BFF secret}
+      KEYCLOAK_BACKCHANNEL: http://keycloak:8080/realms/mpl-one
       KEYCLOAK_ISSUER: http://localhost:8180/realms/mpl-one
       KEYCLOAK_JWKS: http://keycloak:8080/realms/mpl-one/protocol/openid-connect/certs
     ports: ["127.0.0.1:8081:8081"]

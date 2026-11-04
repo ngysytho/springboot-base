@@ -120,4 +120,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit("Legacy Bearer smoke script retired by BFF migration; use session login and CSRF. No requests sent.")
